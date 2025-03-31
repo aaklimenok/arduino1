@@ -28,11 +28,11 @@ int valD5 = 0;
 int valD6 = 0;
 int valD7 = 0;
 int valD8 = 0;
-float kP = 0.2;
+int last_err = 0;
 
 void motorLeft(float speed){
   if (speed > 0) { //min PWM 30
-    int pwm = 30 + (255 - 30) * speed / 100.0;
+    int pwm = 20 + (255 - 20) * speed / 100.0;
     //Serial.print("motorLeft() = "); Serial.print(pwm); Serial.print("; ");
     analogWrite(MOTOR1_IN1, pwm);
     digitalWrite(MOTOR1_IN2, LOW);
@@ -46,7 +46,7 @@ void motorLeft(float speed){
 
 void motorRight(float speed){
   if (speed > 0) { //min PWM 47
-    int pwm = 47 + (255 - 47) * speed / 100.0;
+    int pwm = 35 + (255 - 35) * speed / 100.0;
     //Serial.print("motorRight() = "); Serial.print(pwm); Serial.print("; ");
     analogWrite(MOTOR2_IN1, pwm);
     digitalWrite(MOTOR2_IN2, LOW);
@@ -74,7 +74,7 @@ void motorBrake(){
   digitalWrite(MOTOR2_IN2, HIGH);
 }
 
-void log_Sensor(){
+void logSensor(){
   Serial.print("SENS_D1: "); Serial.print(analogRead(SENS_D1)); Serial.print("; ");
   Serial.print("SENS_D2: "); Serial.print(analogRead(SENS_D2)); Serial.print("; ");
   Serial.print("SENS_D3: "); Serial.print(analogRead(SENS_D3)); Serial.print("; ");
@@ -99,7 +99,6 @@ void Blink(int time){
   Led_off();
 }
 
-
 void setup() {
   Serial.begin(9600);
   pinMode(MOTOR1_IN1, OUTPUT);
@@ -119,13 +118,16 @@ void setup() {
 }
 
 void loop() {
-  float kp = 0.5;
+  float kp = 0.7;
+  float kd = 3.5;
   valD1 = analogRead(SENS_D1); valD2 = analogRead(SENS_D2); valD3 = analogRead(SENS_D3); valD4 = analogRead(SENS_D4); valD5 = analogRead(SENS_D5); valD6 = analogRead(SENS_D6); valD7 = analogRead(SENS_D7); valD8 = analogRead(SENS_D8); 
-  int sumr = valD1 + valD2 + valD3 + valD4;
   int suml = valD5 + valD6 + valD7 + valD8;
+  int sumr = valD4 + valD3 + valD2 + valD1;
   int err = sumr - suml;
   err = max(min(err, 500), -500) / 5.0;
-  motorSteering(err * kp, 10); delay(10);
-  //Serial.println(err * kp); delay(150);
-  
+  int der = err - last_err;
+  motorSteering(err * kp + der * kd - 10, 10); delay(10);
+  last_err = err;
+  //logSensor();
+  //Serial.print(suml); Serial.print("; "); Serial.print(sumr); Serial.print("; "); Serial.println(err); delay(1000);
 }
